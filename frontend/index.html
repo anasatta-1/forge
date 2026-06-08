@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge — Dev Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #faf9f6;
+    --white: #ffffff;
+    --ink: #1a1814;
+    --ink-light: #3d3a35;
+    --ink-muted: #7a7670;
+    --accent: #c8a96e;
+    --accent-soft: #f0e8d8;
+    --accent-deep: #a8823a;
+    --line: #e8e3da;
+    --green: #5a9e6f;
+    --red: #c0392b;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── WELCOME SCREEN ── */
+  #welcome {
+    position: fixed; inset: 0;
+    background: var(--ink);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  #welcome.hide {
+    opacity: 0; pointer-events: none; transform: translateY(-20px);
+  }
+
+  .welcome-bg {
+    position: absolute; inset: 0; overflow: hidden;
+  }
+  .welcome-bg canvas { width: 100%; height: 100%; }
+
+  .welcome-content {
+    position: relative; z-index: 2;
+    text-align: center;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2rem;
+  }
+
+  .forge-logo {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .forge-icon {
+    width: 64px; height: 64px;
+    border: 1.5px solid rgba(200,169,110,0.4);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    animation: rotateBorder 8s linear infinite;
+    position: relative;
+  }
+  .forge-icon::before {
+    content: '';
+    position: absolute; inset: 4px;
+    border: 1px solid rgba(200,169,110,0.2);
+    border-radius: 50%;
+    animation: rotateBorder 6s linear infinite reverse;
+  }
+  @keyframes rotateBorder {
+    from { transform: rotate(0deg); } to { transform: rotate(360deg); }
+  }
+  .forge-icon svg { position: relative; z-index: 1; }
+
+  .forge-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 4rem; font-weight: 300;
+    color: var(--white); letter-spacing: 0.1em;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+  .forge-name em { font-style: italic; color: var(--accent); }
+  .forge-tagline {
+    font-size: 0.78rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: rgba(255,255,255,0.35);
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .welcome-enter {
+    display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    animation: fadeUp 0.8s 0.8s ease both;
+  }
+  .enter-btn {
+    padding: 0.9rem 3rem;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(200,169,110,0.5);
+    border-radius: 2px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem; letter-spacing: 0.15em;
+    text-transform: uppercase; cursor: pointer;
+    transition: background 0.3s, border-color 0.3s, color 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .enter-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--accent);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+    z-index: 0;
+  }
+  .enter-btn:hover::before { transform: translateX(0); }
+  .enter-btn:hover { color: var(--ink); border-color: var(--accent); }
+  .enter-btn span { position: relative; z-index: 1; }
+  .enter-hint {
+    font-size: 0.7rem; color: rgba(255,255,255,0.2);
+    letter-spacing: 0.1em;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── MAIN APP ── */
+  #app {
+    display: flex; flex-direction: column; min-height: 100vh;
+    opacity: 0; transition: opacity 0.6s ease;
+  }
+  #app.visible { opacity: 1; }
+
+  nav {
+    padding: 1.25rem 5vw;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--line);
+    background: rgba(250,249,246,0.92);
+    backdrop-filter: blur(20px);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .nav-brand-icon {
+    width: 28px; height: 28px;
+    background: var(--ink);
+    border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; font-weight: 400; letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+  .nav-logo em { font-style: italic; color: var(--accent); }
+  .nav-right {
+    display: flex; align-items: center; gap: 1.5rem;
+  }
+  .nav-status {
+    font-size: 0.7rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--ink-muted);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--line);
+    transition: background 0.3s;
+  }
+  .status-dot.ready { background: var(--green); }
+  .status-dot.running { background: var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  main {
+    flex: 1; max-width: 800px; width: 100%;
+    margin: 0 auto; padding: 3.5rem 2rem;
+    display: flex; flex-direction: column; gap: 2.5rem;
+  }
+
+  /* HERO */
+  .hero { display: flex; flex-direction: column; gap: 0.75rem; }
+  .hero-eyebrow {
+    font-size: 0.7rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--accent);
+    font-weight: 500;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 24px; height: 1px; background: var(--accent);
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+    font-weight: 300; line-height: 1.1; letter-spacing: -0.01em;
+  }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero p {
+    font-size: 0.88rem; color: var(--ink-muted);
+    font-weight: 300; line-height: 1.8; max-width: 480px;
+  }
+
+  /* CAPABILITIES */
+  .caps {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line);
+  }
+  .cap {
+    background: var(--white); padding: 1.25rem 1.5rem;
+    display: flex; flex-direction: column; gap: 0.4rem;
+  }
+  .cap-icon { font-size: 1.1rem; }
+  .cap-title {
+    font-size: 0.78rem; font-weight: 500; color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .cap-desc {
+    font-size: 0.73rem; color: var(--ink-muted);
+    font-weight: 300; line-height: 1.6;
+  }
+
+  /* INPUT */
+  .input-section { display: flex; flex-direction: column; gap: 1rem; }
+  .input-label {
+    font-size: 0.7rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent); font-weight: 500;
+  }
+  .input-box {
+    border: 1px solid var(--line); background: var(--white);
+    border-radius: 2px; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .input-box:focus-within { border-color: var(--accent); }
+  textarea {
+    width: 100%; display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 300; color: var(--ink);
+    background: transparent; border: none;
+    padding: 1.1rem 1.25rem 0.5rem;
+    resize: none; height: 88px; line-height: 1.7;
+  }
+  textarea:focus { outline: none; }
+  textarea::placeholder { color: var(--ink-muted); }
+  .input-footer {
+    padding: 0.6rem 1.25rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--line);
+  }
+  .input-hint {
+    font-size: 0.68rem; color: var(--ink-muted); letter-spacing: 0.05em;
+  }
+  .input-actions { display: flex; gap: 0.5rem; }
+
+  .btn-run {
+    padding: 0.55rem 1.5rem;
+    background: var(--ink); color: var(--white);
+    border: none; border-radius: 1px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase; cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-run:hover { background: var(--ink-light); }
+  .btn-run:active { transform: scale(0.97); }
+  .btn-run:disabled { background: var(--ink-muted); cursor: not-allowed; transform: none; }
+
+  .btn-stop {
+    padding: 0.55rem 1.2rem;
+    background: transparent; color: var(--red);
+    border: 1px solid rgba(192,57,43,0.3);
+    border-radius: 1px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase; cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    display: none;
+  }
+  .btn-stop.visible { display: flex; align-items: center; gap: 0.4rem; }
+  .btn-stop:hover { background: rgba(192,57,43,0.06); border-color: var(--red); }
+
+  /* EXAMPLES */
+  .examples { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .ex-chip {
+    font-size: 0.72rem; color: var(--ink-muted);
+    border: 1px solid var(--line);
+    padding: 0.3rem 0.85rem; border-radius: 1px;
+    cursor: pointer; font-weight: 300;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .ex-chip:hover {
+    border-color: var(--accent); color: var(--ink);
+    background: var(--accent-soft);
+  }
+
+  /* OUTPUT */
+  .output-wrap {
+    border: 1px solid var(--line); border-radius: 2px;
+    overflow: hidden; display: none;
+  }
+  .output-wrap.visible { display: block; }
+
+  .output-bar {
+    background: var(--ink);
+    padding: 0.7rem 1.25rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .output-bar-left {
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .output-bar-dots { display: flex; gap: 5px; }
+  .output-bar-dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #28c840; }
+  .output-bar-title {
+    font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: rgba(255,255,255,0.35);
+  }
+  .output-clear {
+    font-size: 0.68rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,255,255,0.25);
+    background: none; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    padding: 0; transition: color 0.2s;
+  }
+  .output-clear:hover { color: rgba(255,255,255,0.6); background: none; }
+
+  .output-body {
+    background: var(--white);
+    padding: 1.5rem;
+    display: flex; flex-direction: column; gap: 0.75rem;
+    max-height: 500px; overflow-y: auto;
+  }
+
+  .step {
+    display: flex; flex-direction: column; gap: 0.35rem;
+    animation: stepIn 0.25s ease both;
+  }
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .step-label {
+    font-size: 0.65rem; letter-spacing: 0.15em;
+    text-transform: uppercase; font-weight: 500;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .step-label::before { content: ''; width: 14px; height: 1px; }
+  .step.task .step-label { color: var(--ink-muted); }
+  .step.task .step-label::before { background: var(--ink-muted); }
+  .step.tool_call .step-label { color: var(--accent); }
+  .step.tool_call .step-label::before { background: var(--accent); }
+  .step.result .step-label { color: var(--green); }
+  .step.result .step-label::before { background: var(--green); }
+  .step.done .step-label { color: var(--ink); }
+  .step.done .step-label::before { background: var(--ink); }
+  .step.error .step-label { color: var(--red); }
+  .step.error .step-label::before { background: var(--red); }
+
+  .step-content {
+    font-size: 0.8rem; line-height: 1.7; color: var(--ink-light);
+    background: var(--cream); border-left: 2px solid var(--line);
+    padding: 0.6rem 1rem; white-space: pre-wrap;
+    font-family: 'Courier New', monospace; font-weight: 400;
+  }
+  .step.tool_call .step-content { border-left-color: var(--accent); }
+  .step.result .step-content { border-left-color: var(--green); }
+  .step.done .step-content {
+    border-left-color: var(--ink);
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+    background: var(--accent-soft);
+  }
+  .step.error .step-content { border-left-color: var(--red); }
+
+  .thinking {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.75rem; color: var(--ink-muted); font-weight: 300;
+    padding: 0.25rem 0;
+  }
+  .dots span {
+    display: inline-block; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--accent); margin: 0 1px;
+    animation: bounce 1.2s infinite;
+  }
+  .dots span:nth-child(2) { animation-delay: 0.15s; }
+  .dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  footer {
+    padding: 1.5rem 5vw;
+    border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between;
+    font-size: 0.7rem; color: var(--ink-muted); font-weight: 300;
+  }
+</style>
+</head>
+<body>
+
+<!-- WELCOME SCREEN -->
+<div id="welcome">
+  <div class="welcome-bg"><canvas id="particleCanvas"></canvas></div>
+  <div class="welcome-content">
+    <div class="forge-logo">
+      <div class="forge-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="forge-name">F<em>o</em>rge</div>
+      <div class="forge-tagline">Autonomous Dev Agent</div>
+    </div>
+    <div class="welcome-enter">
+      <button class="enter-btn" onclick="enterApp()"><span>Launch Agent</span></button>
+      <span class="enter-hint">Press Enter or click to continue</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <nav>
+    <div class="nav-brand">
+      <div class="nav-brand-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.5">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="nav-logo">F<em>o</em>rge</div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Initialising</span>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="hero-eyebrow">Autonomous Dev Agent</div>
+      <h1>Describe it.<br><em>Watch it build.</em></h1>
+      <p>Forge takes a task in plain English, thinks through it step by step, and executes — writing files, running commands, and fixing its own errors.</p>
+    </div>
+
+    <div class="caps">
+      <div class="cap">
+        <div class="cap-icon">✦</div>
+        <div class="cap-title">Writes Code</div>
+        <div class="cap-desc">Creates files and full project structures from scratch</div>
+      </div>
+      <div class="cap">
+        <div class="cap-icon">⟳</div>
+        <div class="cap-title">Self-Corrects</div>
+        <div class="cap-desc">Reads errors and retries until the task is complete</div>
+      </div>
+      <div class="cap">
+        <div class="cap-icon">◈</div>
+        <div class="cap-title">Runs Commands</div>
+        <div class="cap-desc">Installs packages, executes scripts, verifies output</div>
+      </div>
+    </div>
+
+    <div class="input-section">
+      <div class="input-label">Task</div>
+      <div class="input-box">
+        <textarea id="taskInput" placeholder="e.g. build a Python script that scrapes quotes from a website and saves them to a CSV..."></textarea>
+        <div class="input-footer">
+          <span class="input-hint">Ctrl + Enter to run</span>
+          <div class="input-actions">
+            <button class="btn-stop" id="stopBtn" onclick="stopTask()">
+              <svg width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" fill="currentColor" rx="1"/></svg>
+              Stop
+            </button>
+            <button class="btn-run" id="runBtn" onclick="runTask()">
+              Run
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="examples">
+        <span class="ex-chip" onclick="setEx(this)">Create a todo CLI in Python</span>
+        <span class="ex-chip" onclick="setEx(this)">Build a Flask REST API for notes</span>
+        <span class="ex-chip" onclick="setEx(this)">Write a web scraper for quotes</span>
+        <span class="ex-chip" onclick="setEx(this)">Make a file organiser script</span>
+        <span class="ex-chip" onclick="setEx(this)">Create a markdown to HTML converter</span>
+      </div>
+    </div>
+
+    <div class="output-wrap" id="outputWrap">
+      <div class="output-bar">
+        <div class="output-bar-left">
+          <div class="output-bar-dots">
+            <span class="dot-red"></span>
+            <span class="dot-yellow"></span>
+            <span class="dot-green"></span>
+          </div>
+          <span class="output-bar-title">Agent Output</span>
+        </div>
+        <button class="output-clear" onclick="clearOutput()">Clear</button>
+      </div>
+      <div class="output-body" id="outputBody"></div>
+    </div>
+  </main>
+
+  <footer>
+    <span>Forge — local dev agent</span>
+    <span>Powered by Groq · Llama 3.3 70B</span>
+  </footer>
+</div>
+
+<script>
+  // ── PARTICLES ──────────────────────────────────────────────────────
+  const canvas = document.getElementById('particleCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  for (let i = 0; i < 60; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.5 + 0.3,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: (Math.random() - 0.5) * 0.3,
+      o: Math.random() * 0.4 + 0.1
+    });
+  }
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200, 169, 110, ${p.o})`;
+      ctx.fill();
+      p.x += p.dx; p.y += p.dy;
+      if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+    });
+    requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+
+  // ── WELCOME ────────────────────────────────────────────────────────
+  function enterApp() {
+    document.getElementById('welcome').classList.add('hide');
+    const app = document.getElementById('app');
+    app.classList.add('visible');
+    setTimeout(() => setStatus('ready', 'Ready'), 600);
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('welcome').classList.contains('hide')) {
+      enterApp();
+    }
+  });
+
+  // ── STATUS ─────────────────────────────────────────────────────────
+  function setStatus(state, text) {
+    document.getElementById('statusText').textContent = text;
+    document.getElementById('statusDot').className = `status-dot ${state}`;
+  }
+
+  // ── EXAMPLES ───────────────────────────────────────────────────────
+  function setEx(el) {
+    document.getElementById('taskInput').value = el.textContent;
+    document.getElementById('taskInput').focus();
+  }
+
+  // ── OUTPUT ─────────────────────────────────────────────────────────
+  function clearOutput() {
+    document.getElementById('outputBody').innerHTML = '';
+    document.getElementById('outputWrap').classList.remove('visible');
+  }
+
+  function addStep(type, label, content) {
+    const body = document.getElementById('outputBody');
+    const thinking = body.querySelector('.thinking');
+    if (thinking) thinking.remove();
+
+    const step = document.createElement('div');
+    step.className = `step ${type}`;
+    step.innerHTML = `
+      <div class="step-label">${label}</div>
+      <div class="step-content">${escapeHtml(content)}</div>
+    `;
+    body.appendChild(step);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function addThinking() {
+    const body = document.getElementById('outputBody');
+    const el = document.createElement('div');
+    el.className = 'thinking';
+    el.innerHTML = `<div class="dots"><span></span><span></span><span></span></div> Thinking...`;
+    body.appendChild(el);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── RUN ────────────────────────────────────────────────────────────
+  let currentRunId = null;
+  let evtSource = null;
+
+  function runTask() {
+    const task = document.getElementById('taskInput').value.trim();
+    if (!task) return;
+
+    currentRunId = Date.now().toString();
+
+    document.getElementById('outputBody').innerHTML = '';
+    document.getElementById('outputWrap').classList.add('visible');
+    document.getElementById('runBtn').disabled = true;
+    document.getElementById('stopBtn').classList.add('visible');
+    setStatus('running', 'Running');
+    addThinking();
+
+    evtSource = new EventSource(`/run?task=${encodeURIComponent(task)}&id=${currentRunId}`);
+
+    evtSource.onmessage = (e) => {
+      if (e.data === '[DONE]') {
+        finish();
+        return;
+      }
+      try {
+        const event = JSON.parse(e.data);
+        addStep(event.type, event.label, event.content);
+        if (event.type !== 'done' && event.type !== 'error') addThinking();
+      } catch(err) {}
+    };
+
+    evtSource.onerror = () => finish();
+  }
+
+  function finish() {
+    if (evtSource) { evtSource.close(); evtSource = null; }
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('stopBtn').classList.remove('visible');
+    setStatus('ready', 'Ready');
+    const thinking = document.getElementById('outputBody').querySelector('.thinking');
+    if (thinking) thinking.remove();
+  }
+
+  function stopTask() {
+    if (!currentRunId) return;
+    fetch('/stop', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({id: currentRunId})
+    });
+    finish();
+  }
+
+  document.getElementById('taskInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) runTask();
+  });
+</script>
+</body>
+</html>
