@@ -1,683 +1,1040 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Forge — Dev Agent</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --cream: #faf9f6;
-    --white: #ffffff;
-    --ink: #1a1814;
-    --ink-light: #3d3a35;
-    --ink-muted: #7a7670;
-    --accent: #c8a96e;
-    --accent-soft: #f0e8d8;
-    --accent-deep: #a8823a;
-    --line: #e8e3da;
-    --green: #5a9e6f;
-    --red: #c0392b;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
 
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--cream);
-    color: var(--ink);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── WELCOME SCREEN ── */
-  #welcome {
-    position: fixed; inset: 0;
-    background: var(--ink);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    z-index: 100;
-    transition: opacity 0.8s ease, transform 0.8s ease;
-  }
-  #welcome.hide {
-    opacity: 0; pointer-events: none; transform: translateY(-20px);
-  }
-
-  .welcome-bg {
-    position: absolute; inset: 0; overflow: hidden;
-  }
-  .welcome-bg canvas { width: 100%; height: 100%; }
-
-  .welcome-content {
-    position: relative; z-index: 2;
-    text-align: center;
-    display: flex; flex-direction: column;
-    align-items: center; gap: 2rem;
-  }
-
-  .forge-logo {
-    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
-  }
-  .forge-icon {
-    width: 64px; height: 64px;
-    border: 1.5px solid rgba(200,169,110,0.4);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    animation: rotateBorder 8s linear infinite;
+  .forge-root {
+    font-family: 'Inter', sans-serif;
+    background: #0d0d0f;
+    color: #e8e3dc;
+    min-height: 600px;
+    border-radius: 16px;
+    overflow: hidden;
     position: relative;
   }
-  .forge-icon::before {
-    content: '';
-    position: absolute; inset: 4px;
-    border: 1px solid rgba(200,169,110,0.2);
+
+  .forge-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .forge-bg-orb {
+    position: absolute;
     border-radius: 50%;
-    animation: rotateBorder 6s linear infinite reverse;
-  }
-  @keyframes rotateBorder {
-    from { transform: rotate(0deg); } to { transform: rotate(360deg); }
-  }
-  .forge-icon svg { position: relative; z-index: 1; }
-
-  .forge-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 4rem; font-weight: 300;
-    color: var(--white); letter-spacing: 0.1em;
-    animation: fadeUp 0.8s 0.3s ease both;
-  }
-  .forge-name em { font-style: italic; color: var(--accent); }
-  .forge-tagline {
-    font-size: 0.78rem; letter-spacing: 0.2em;
-    text-transform: uppercase; color: rgba(255,255,255,0.35);
-    animation: fadeUp 0.8s 0.5s ease both;
-  }
-
-  .welcome-enter {
-    display: flex; flex-direction: column; align-items: center; gap: 1rem;
-    animation: fadeUp 0.8s 0.8s ease both;
-  }
-  .enter-btn {
-    padding: 0.9rem 3rem;
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid rgba(200,169,110,0.5);
-    border-radius: 2px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.78rem; letter-spacing: 0.15em;
-    text-transform: uppercase; cursor: pointer;
-    transition: background 0.3s, border-color 0.3s, color 0.3s;
-    position: relative; overflow: hidden;
-  }
-  .enter-btn::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: var(--accent);
-    transform: translateX(-100%);
-    transition: transform 0.4s ease;
+    pointer-events: none;
     z-index: 0;
   }
-  .enter-btn:hover::before { transform: translateX(0); }
-  .enter-btn:hover { color: var(--ink); border-color: var(--accent); }
-  .enter-btn span { position: relative; z-index: 1; }
-  .enter-hint {
-    font-size: 0.7rem; color: rgba(255,255,255,0.2);
-    letter-spacing: 0.1em;
+  .orb1 { width: 600px; height: 600px; top: -200px; right: -100px; background: radial-gradient(circle, rgba(180,100,30,0.18) 0%, transparent 70%); }
+  .orb2 { width: 400px; height: 400px; bottom: -100px; left: -80px; background: radial-gradient(circle, rgba(120,70,20,0.12) 0%, transparent 70%); }
+  .orb3 { width: 200px; height: 200px; top: 40%; left: 40%; background: radial-gradient(circle, rgba(210,140,60,0.07) 0%, transparent 70%); }
+
+  .forge-page { position: relative; z-index: 1; }
+
+  /* ── WELCOME ── */
+  .page-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    text-align: center;
+    min-height: 600px;
   }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+  .forge-emblem {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 32px;
+    position: relative;
   }
 
-  /* ── MAIN APP ── */
-  #app {
-    display: flex; flex-direction: column; min-height: 100vh;
-    opacity: 0; transition: opacity 0.6s ease;
-  }
-  #app.visible { opacity: 1; }
-
-  nav {
-    padding: 1.25rem 5vw;
-    display: flex; justify-content: space-between; align-items: center;
-    border-bottom: 1px solid var(--line);
-    background: rgba(250,249,246,0.92);
-    backdrop-filter: blur(20px);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .nav-brand {
-    display: flex; align-items: center; gap: 0.75rem;
-  }
-  .nav-brand-icon {
-    width: 28px; height: 28px;
-    background: var(--ink);
-    border-radius: 2px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .nav-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.3rem; font-weight: 400; letter-spacing: 0.08em;
-    color: var(--ink);
-  }
-  .nav-logo em { font-style: italic; color: var(--accent); }
-  .nav-right {
-    display: flex; align-items: center; gap: 1.5rem;
-  }
-  .nav-status {
-    font-size: 0.7rem; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--ink-muted);
-    display: flex; align-items: center; gap: 0.5rem;
-  }
-  .status-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--line);
-    transition: background 0.3s;
-  }
-  .status-dot.ready { background: var(--green); }
-  .status-dot.running { background: var(--accent); animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  main {
-    flex: 1; max-width: 800px; width: 100%;
-    margin: 0 auto; padding: 3.5rem 2rem;
-    display: flex; flex-direction: column; gap: 2.5rem;
+  .emblem-hex {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #c4862a, #8a5a1c);
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: emblemPulse 3s ease-in-out infinite;
   }
 
-  /* HERO */
-  .hero { display: flex; flex-direction: column; gap: 0.75rem; }
-  .hero-eyebrow {
-    font-size: 0.7rem; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--accent);
+  @keyframes emblemPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.04); }
+  }
+
+  .emblem-inner {
+    width: 36px;
+    height: 36px;
+    background: #0d0d0f;
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .emblem-dot {
+    width: 8px;
+    height: 8px;
+    background: #c4862a;
+    border-radius: 50%;
+    animation: dotGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes dotGlow {
+    0%, 100% { box-shadow: 0 0 4px #c4862a; }
+    50% { box-shadow: 0 0 12px #e8a040; }
+  }
+
+  .welcome-wordmark {
+    font-family: 'Playfair Display', serif;
+    font-size: 60px;
+    font-weight: 700;
+    letter-spacing: 12px;
+    text-transform: uppercase;
+    color: #e8e3dc;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+
+  .welcome-tagline {
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #c4862a;
+    margin-bottom: 40px;
     font-weight: 500;
-    display: flex; align-items: center; gap: 0.75rem;
-  }
-  .hero-eyebrow::before {
-    content: ''; width: 24px; height: 1px; background: var(--accent);
-  }
-  .hero h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2.2rem, 4.5vw, 3.5rem);
-    font-weight: 300; line-height: 1.1; letter-spacing: -0.01em;
-  }
-  .hero h1 em { font-style: italic; color: var(--accent); }
-  .hero p {
-    font-size: 0.88rem; color: var(--ink-muted);
-    font-weight: 300; line-height: 1.8; max-width: 480px;
   }
 
-  /* CAPABILITIES */
-  .caps {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-    background: var(--line); border: 1px solid var(--line);
-  }
-  .cap {
-    background: var(--white); padding: 1.25rem 1.5rem;
-    display: flex; flex-direction: column; gap: 0.4rem;
-  }
-  .cap-icon { font-size: 1.1rem; }
-  .cap-title {
-    font-size: 0.78rem; font-weight: 500; color: var(--ink);
-    letter-spacing: 0.02em;
-  }
-  .cap-desc {
-    font-size: 0.73rem; color: var(--ink-muted);
-    font-weight: 300; line-height: 1.6;
+  .welcome-divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #c4862a, transparent);
+    margin: 0 auto 40px;
   }
 
-  /* INPUT */
-  .input-section { display: flex; flex-direction: column; gap: 1rem; }
-  .input-label {
-    font-size: 0.7rem; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--accent); font-weight: 500;
+  .welcome-desc {
+    font-size: 16px;
+    color: #9e9890;
+    max-width: 400px;
+    line-height: 1.75;
+    margin-bottom: 56px;
   }
-  .input-box {
-    border: 1px solid var(--line); background: var(--white);
-    border-radius: 2px; overflow: hidden;
+
+  .welcome-desc strong { color: #e8e3dc; font-weight: 500; }
+
+  .welcome-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-forge {
+    padding: 14px 36px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-forge::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.2s;
+  }
+
+  .btn-forge:hover::after { background: rgba(255,255,255,0.07); }
+
+  .btn-primary-forge {
+    background: linear-gradient(135deg, #c4862a 0%, #8a5a1c 100%);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(196,134,42,0.3);
+  }
+
+  .btn-primary-forge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(196,134,42,0.45);
+  }
+
+  .btn-ghost-forge {
+    background: transparent;
+    color: #e8e3dc;
+    border: 1px solid rgba(232,227,220,0.2);
+  }
+
+  .btn-ghost-forge:hover {
+    border-color: rgba(196,134,42,0.5);
+    color: #c4862a;
+    transform: translateY(-2px);
+  }
+
+  .welcome-features {
+    display: flex;
+    gap: 32px;
+    margin-top: 64px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .feat-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #6e6860;
+    letter-spacing: 0.5px;
+  }
+
+  .feat-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #c4862a;
+    opacity: 0.6;
+  }
+
+  /* ── APP PAGE ── */
+  .page-app { display: none; padding: 0; }
+
+  .app-navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 36px;
+    border-bottom: 1px solid rgba(232,227,220,0.07);
+    background: rgba(13,13,15,0.8);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-hex {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #c4862a, #8a5a1c);
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  }
+
+  .nav-wordmark {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #e8e3dc;
+  }
+
+  .nav-actions { display: flex; gap: 8px; align-items: center; }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(232,227,220,0.05);
+    border: 1px solid rgba(232,227,220,0.1);
+    border-radius: 8px;
+    color: #9e9890;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .nav-btn:hover { background: rgba(196,134,42,0.15); border-color: rgba(196,134,42,0.3); color: #c4862a; }
+
+  .app-body { padding: 40px 36px; }
+
+  /* ── TASK INPUT ── */
+  .task-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(232,227,220,0.09);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
     transition: border-color 0.3s;
   }
-  .input-box:focus-within { border-color: var(--accent); }
-  textarea {
-    width: 100%; display: block;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem; font-weight: 300; color: var(--ink);
-    background: transparent; border: none;
-    padding: 1.1rem 1.25rem 0.5rem;
-    resize: none; height: 88px; line-height: 1.7;
-  }
-  textarea:focus { outline: none; }
-  textarea::placeholder { color: var(--ink-muted); }
-  .input-footer {
-    padding: 0.6rem 1.25rem;
-    display: flex; justify-content: space-between; align-items: center;
-    border-top: 1px solid var(--line);
-  }
-  .input-hint {
-    font-size: 0.68rem; color: var(--ink-muted); letter-spacing: 0.05em;
-  }
-  .input-actions { display: flex; gap: 0.5rem; }
 
-  .btn-run {
-    padding: 0.55rem 1.5rem;
-    background: var(--ink); color: var(--white);
-    border: none; border-radius: 1px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.72rem; letter-spacing: 0.12em;
-    text-transform: uppercase; cursor: pointer;
-    transition: background 0.2s, transform 0.15s;
-    display: flex; align-items: center; gap: 0.5rem;
-  }
-  .btn-run:hover { background: var(--ink-light); }
-  .btn-run:active { transform: scale(0.97); }
-  .btn-run:disabled { background: var(--ink-muted); cursor: not-allowed; transform: none; }
+  .task-card:hover { border-color: rgba(196,134,42,0.2); }
 
-  .btn-stop {
-    padding: 0.55rem 1.2rem;
-    background: transparent; color: var(--red);
-    border: 1px solid rgba(192,57,43,0.3);
-    border-radius: 1px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.72rem; letter-spacing: 0.12em;
-    text-transform: uppercase; cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+  .task-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, #c4862a, #5a3210);
+    border-radius: 16px 0 0 16px;
+  }
+
+  .task-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c4862a;
+    margin-bottom: 16px;
+  }
+
+  .task-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: #e8e3dc;
+    line-height: 1.7;
+    resize: none;
+    min-height: 80px;
+    caret-color: #c4862a;
+    placeholder-color: #4a4640;
+  }
+
+  .task-textarea::placeholder { color: #4a4640; }
+
+  .task-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(232,227,220,0.07);
+  }
+
+  .task-hint { font-size: 12px; color: #4a4640; }
+
+  .btn-plan {
+    padding: 12px 28px;
+    background: linear-gradient(135deg, #c4862a 0%, #8a5a1c 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 4px 16px rgba(196,134,42,0.25);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-plan:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(196,134,42,0.4); }
+  .btn-plan:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-plan .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
     display: none;
   }
-  .btn-stop.visible { display: flex; align-items: center; gap: 0.4rem; }
-  .btn-stop:hover { background: rgba(192,57,43,0.06); border-color: var(--red); }
 
-  /* EXAMPLES */
-  .examples { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .ex-chip {
-    font-size: 0.72rem; color: var(--ink-muted);
-    border: 1px solid var(--line);
-    padding: 0.3rem 0.85rem; border-radius: 1px;
-    cursor: pointer; font-weight: 300;
-    transition: border-color 0.2s, color 0.2s, background 0.2s;
-  }
-  .ex-chip:hover {
-    border-color: var(--accent); color: var(--ink);
-    background: var(--accent-soft);
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── PLAN SECTION ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
   }
 
-  /* OUTPUT */
-  .output-wrap {
-    border: 1px solid var(--line); border-radius: 2px;
-    overflow: hidden; display: none;
-  }
-  .output-wrap.visible { display: block; }
-
-  .output-bar {
-    background: var(--ink);
-    padding: 0.7rem 1.25rem;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .output-bar-left {
-    display: flex; align-items: center; gap: 0.75rem;
-  }
-  .output-bar-dots { display: flex; gap: 5px; }
-  .output-bar-dots span {
-    width: 10px; height: 10px; border-radius: 50%;
-  }
-  .dot-red { background: #ff5f57; }
-  .dot-yellow { background: #ffbd2e; }
-  .dot-green { background: #28c840; }
-  .output-bar-title {
-    font-size: 0.68rem; letter-spacing: 0.12em;
-    text-transform: uppercase; color: rgba(255,255,255,0.35);
-  }
-  .output-clear {
-    font-size: 0.68rem; letter-spacing: 0.1em;
-    text-transform: uppercase; color: rgba(255,255,255,0.25);
-    background: none; border: none; cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    padding: 0; transition: color 0.2s;
-  }
-  .output-clear:hover { color: rgba(255,255,255,0.6); background: none; }
-
-  .output-body {
-    background: var(--white);
-    padding: 1.5rem;
-    display: flex; flex-direction: column; gap: 0.75rem;
-    max-height: 500px; overflow-y: auto;
+  .section-icon {
+    width: 32px; height: 32px;
+    background: rgba(196,134,42,0.12);
+    border: 1px solid rgba(196,134,42,0.25);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #c4862a;
+    font-size: 15px;
   }
 
-  .step {
-    display: flex; flex-direction: column; gap: 0.35rem;
-    animation: stepIn 0.25s ease both;
+  .section-title-text {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #6e6860;
   }
+
+  .plan-grid { display: grid; gap: 10px; margin-bottom: 24px; }
+
+  .plan-step {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(232,227,220,0.07);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all 0.25s;
+    cursor: default;
+    animation: stepIn 0.4s ease-out both;
+  }
+
   @keyframes stepIn {
-    from { opacity: 0; transform: translateX(-8px); }
+    from { opacity: 0; transform: translateX(-12px); }
     to { opacity: 1; transform: translateX(0); }
   }
 
-  .step-label {
-    font-size: 0.65rem; letter-spacing: 0.15em;
-    text-transform: uppercase; font-weight: 500;
-    display: flex; align-items: center; gap: 0.5rem;
-  }
-  .step-label::before { content: ''; width: 14px; height: 1px; }
-  .step.task .step-label { color: var(--ink-muted); }
-  .step.task .step-label::before { background: var(--ink-muted); }
-  .step.tool_call .step-label { color: var(--accent); }
-  .step.tool_call .step-label::before { background: var(--accent); }
-  .step.result .step-label { color: var(--green); }
-  .step.result .step-label::before { background: var(--green); }
-  .step.done .step-label { color: var(--ink); }
-  .step.done .step-label::before { background: var(--ink); }
-  .step.error .step-label { color: var(--red); }
-  .step.error .step-label::before { background: var(--red); }
-
-  .step-content {
-    font-size: 0.8rem; line-height: 1.7; color: var(--ink-light);
-    background: var(--cream); border-left: 2px solid var(--line);
-    padding: 0.6rem 1rem; white-space: pre-wrap;
-    font-family: 'Courier New', monospace; font-weight: 400;
-  }
-  .step.tool_call .step-content { border-left-color: var(--accent); }
-  .step.result .step-content { border-left-color: var(--green); }
-  .step.done .step-content {
-    border-left-color: var(--ink);
-    font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-    background: var(--accent-soft);
-  }
-  .step.error .step-content { border-left-color: var(--red); }
-
-  .thinking {
-    display: flex; align-items: center; gap: 0.6rem;
-    font-size: 0.75rem; color: var(--ink-muted); font-weight: 300;
-    padding: 0.25rem 0;
-  }
-  .dots span {
-    display: inline-block; width: 4px; height: 4px;
-    border-radius: 50%; background: var(--accent); margin: 0 1px;
-    animation: bounce 1.2s infinite;
-  }
-  .dots span:nth-child(2) { animation-delay: 0.15s; }
-  .dots span:nth-child(3) { animation-delay: 0.3s; }
-  @keyframes bounce {
-    0%,80%,100% { transform: translateY(0); opacity: 0.4; }
-    40% { transform: translateY(-5px); opacity: 1; }
+  .plan-step:hover {
+    background: rgba(196,134,42,0.05);
+    border-color: rgba(196,134,42,0.2);
+    transform: translateX(4px);
   }
 
-  footer {
-    padding: 1.5rem 5vw;
-    border-top: 1px solid var(--line);
-    display: flex; justify-content: space-between;
-    font-size: 0.7rem; color: var(--ink-muted); font-weight: 300;
+  .step-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(196,134,42,0.4);
+    min-width: 28px;
+    line-height: 1;
+    padding-top: 2px;
   }
+
+  .step-text {
+    font-size: 14px;
+    color: #c8c0b4;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .step-tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(196,134,42,0.1);
+    color: rgba(196,134,42,0.7);
+    border: 1px solid rgba(196,134,42,0.15);
+    white-space: nowrap;
+  }
+
+  .execute-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0 0;
+  }
+
+  .execute-meta { font-size: 12px; color: #4a4640; }
+  .execute-meta span { color: #c4862a; }
+
+  .btn-execute {
+    padding: 13px 32px;
+    background: transparent;
+    color: #c4862a;
+    border: 1px solid rgba(196,134,42,0.4);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .btn-execute:hover {
+    background: rgba(196,134,42,0.1);
+    border-color: #c4862a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(196,134,42,0.2);
+  }
+
+  /* ── LOG ── */
+  .log-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(232,227,220,0.07);
+    border-radius: 12px;
+    padding: 24px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .log-line {
+    font-size: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(232,227,220,0.04);
+    display: flex;
+    gap: 12px;
+    line-height: 1.5;
+    animation: logFade 0.3s ease-out both;
+  }
+
+  @keyframes logFade { from { opacity: 0; } to { opacity: 1; } }
+
+  .log-line:last-child { border-bottom: none; }
+  .log-ts { color: #3a3630; font-size: 11px; min-width: 50px; }
+  .log-badge { font-size: 10px; font-weight: 600; letter-spacing: 1px; padding: 1px 6px; border-radius: 3px; white-space: nowrap; align-self: flex-start; margin-top: 1px; }
+  .log-badge.task { background: rgba(196,134,42,0.15); color: #c4862a; }
+  .log-badge.tool { background: rgba(88,140,220,0.15); color: #7aabf0; }
+  .log-badge.result { background: rgba(80,190,100,0.15); color: #6dbf7e; }
+  .log-badge.error { background: rgba(220,80,80,0.15); color: #e07070; }
+  .log-badge.done { background: rgba(196,134,42,0.2); color: #d4a060; }
+  .log-badge.phase { background: rgba(196,134,42,0.2); color: #d4a060; }
+  .log-badge.step_start { background: rgba(88,140,220,0.15); color: #7aabf0; }
+  .log-badge.step_complete { background: rgba(80,190,100,0.15); color: #6dbf7e; }
+  .log-msg { color: #9e9890; flex: 1; }
+  .log-msg.task-msg { color: #e8e3dc; }
+  .log-msg.done-msg { color: #c4862a; }
+
+  /* ── HISTORY ── */
+  .history-grid { display: grid; gap: 10px; }
+
+  .history-entry {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(232,227,220,0.07);
+    border-radius: 10px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .history-entry:hover {
+    background: rgba(196,134,42,0.05);
+    border-color: rgba(196,134,42,0.2);
+    transform: translateX(4px);
+  }
+
+  .history-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(196,134,42,0.5); flex-shrink: 0; }
+  .history-task { font-size: 14px; color: #c8c0b4; flex: 1; }
+  .history-time { font-size: 11px; color: #4a4640; white-space: nowrap; }
+
+  /* ── MODALS ── */
+  .modal-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: #141414;
+    border: 1px solid rgba(232,227,220,0.1);
+    border-radius: 16px;
+    width: 520px;
+    max-width: 90%;
+    max-height: 80%;
+    overflow-y: auto;
+    animation: modalIn 0.3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px;
+    border-bottom: 1px solid rgba(232,227,220,0.08);
+  }
+
+  .modal-head h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: #e8e3dc;
+  }
+
+  .modal-close-btn {
+    width: 32px; height: 32px;
+    background: rgba(232,227,220,0.07);
+    border: none;
+    border-radius: 8px;
+    color: #6e6860;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+
+  .modal-close-btn:hover { background: rgba(196,134,42,0.15); color: #c4862a; }
+
+  .modal-body-inner { padding: 28px; }
+  .modal-section { margin-bottom: 24px; }
+  .modal-section h4 { font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #c4862a; margin-bottom: 10px; }
+  .modal-section p { font-size: 14px; color: #9e9890; line-height: 1.7; }
+
+  /* wizard */
+  .wizard-steps { display: flex; gap: 6px; margin-bottom: 28px; }
+  .w-dot { height: 4px; border-radius: 2px; background: rgba(232,227,220,0.1); flex: 1; transition: background 0.3s; }
+  .w-dot.active { background: #c4862a; }
+
+  .w-step { display: none; }
+  .w-step.visible { display: block; animation: fadeIn 0.3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .w-step h4 { font-family: 'Playfair Display', serif; font-size: 20px; color: #e8e3dc; margin-bottom: 12px; }
+  .w-step p { font-size: 14px; color: #9e9890; line-height: 1.7; margin-bottom: 12px; }
+
+  .code-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(232,227,220,0.08);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: 'Monaco', monospace;
+    font-size: 13px;
+    color: #c4862a;
+    margin: 16px 0;
+    border-left: 3px solid rgba(196,134,42,0.4);
+  }
+
+  .w-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(232,227,220,0.07);
+  }
+
+  .w-btn {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(232,227,220,0.12);
+    background: transparent;
+    color: #6e6860;
+  }
+
+  .w-btn:hover { color: #e8e3dc; border-color: rgba(232,227,220,0.25); }
+
+  .w-btn-next {
+    background: linear-gradient(135deg, #c4862a, #8a5a1c);
+    border: none;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(196,134,42,0.25);
+  }
+
+  .w-btn-next:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(196,134,42,0.4); }
+
+  ul.w-list { margin-left: 18px; }
+  ul.w-list li { font-size: 14px; color: #9e9890; margin-bottom: 8px; line-height: 1.6; }
+  ul.w-list li strong { color: #c8c0b4; font-weight: 500; }
+
+  .section-block { margin-bottom: 36px; }
+  .hidden { display: none !important; }
 </style>
-</head>
-<body>
 
-<!-- WELCOME SCREEN -->
-<div id="welcome">
-  <div class="welcome-bg"><canvas id="particleCanvas"></canvas></div>
-  <div class="welcome-content">
-    <div class="forge-logo">
-      <div class="forge-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.2">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-          <path d="M2 17l10 5 10-5"/>
-          <path d="M2 12l10 5 10-5"/>
-        </svg>
+<div class="forge-root" id="forgeRoot">
+  <div class="forge-bg-orb orb1"></div>
+  <div class="forge-bg-orb orb2"></div>
+  <div class="forge-bg-orb orb3"></div>
+
+  <!-- WELCOME -->
+  <div class="forge-page page-welcome" id="pgWelcome">
+    <div class="forge-emblem">
+      <div class="emblem-hex">
+        <div class="emblem-inner"><div class="emblem-dot"></div></div>
       </div>
-      <div class="forge-name">F<em>o</em>rge</div>
-      <div class="forge-tagline">Autonomous Dev Agent</div>
     </div>
-    <div class="welcome-enter">
-      <button class="enter-btn" onclick="enterApp()"><span>Launch Agent</span></button>
-      <span class="enter-hint">Press Enter or click to continue</span>
+    <div class="welcome-wordmark">Forge</div>
+    <div class="welcome-tagline">Local Dev Agent</div>
+    <div class="welcome-divider"></div>
+    <p class="welcome-desc">
+      Describe what you want to <strong>build</strong>. Forge plans it, writes the code, and executes — entirely on your machine.
+    </p>
+    <div class="welcome-actions">
+      <button class="btn-forge btn-primary-forge" onclick="showApp()">Start Building</button>
+      <button class="btn-forge btn-ghost-forge" onclick="showWizard()">Setup Guide</button>
+    </div>
+    <div class="welcome-features">
+      <div class="feat-pill"><div class="feat-dot"></div>Runs Locally</div>
+      <div class="feat-pill"><div class="feat-dot"></div>No Uploads</div>
+      <div class="feat-pill"><div class="feat-dot"></div>Zero Tracking</div>
+      <div class="feat-pill"><div class="feat-dot"></div>Groq-Powered</div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="forge-page page-app" id="pgApp">
+    <nav class="app-navbar">
+      <div class="nav-brand">
+        <div class="nav-hex"></div>
+        <div class="nav-wordmark">Forge</div>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-btn" onclick="showWizard()" title="Setup">⚙️</button>
+        <button class="nav-btn" onclick="showPrivacy()" title="Privacy">🔒</button>
+      </div>
+    </nav>
+
+    <div class="app-body">
+      <!-- Task Input -->
+      <div class="task-card">
+        <div class="task-label">New Task</div>
+        <textarea class="task-textarea" id="taskInput" rows="3" placeholder="Describe what you want to build... e.g. 'Create a REST API with user auth'"></textarea>
+        <div class="task-footer">
+          <div class="task-hint">Forge will plan and execute locally on your machine</div>
+          <button class="btn-plan" id="planBtn" onclick="doPlan()">
+            <div class="spinner" id="planSpinner"></div>
+            <span id="planBtnLabel">Plan Task</span>
+            →
+          </button>
+        </div>
+      </div>
+
+      <!-- Plan -->
+      <div class="section-block hidden" id="planSection">
+        <div class="section-header">
+          <div class="section-icon">✓</div>
+          <div class="section-title-text">Execution Plan</div>
+        </div>
+        <div class="plan-grid" id="planGrid"></div>
+        <div class="execute-row">
+          <div class="execute-meta"><span id="stepCount">0</span> steps queued</div>
+          <button class="btn-execute" onclick="doExecute()">
+            ▶ Execute Plan
+          </button>
+        </div>
+      </div>
+
+      <!-- Execution Log -->
+      <div class="section-block hidden" id="execSection">
+        <div class="section-header">
+          <div class="section-icon">⚡</div>
+          <div class="section-title-text">Execution Log</div>
+        </div>
+        <div class="log-card" id="logCard"></div>
+      </div>
+
+      <!-- History -->
+      <div class="section-block hidden" id="historySection">
+        <div class="section-header">
+          <div class="section-icon">📚</div>
+          <div class="section-title-text">Recent Tasks</div>
+        </div>
+        <div class="history-grid" id="historyGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIVACY MODAL -->
+  <div class="modal-overlay" id="privacyModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>Privacy Policy</h3>
+        <button class="modal-close-btn" onclick="closeModal('privacyModal')">✕</button>
+      </div>
+      <div class="modal-body-inner">
+        <div class="modal-section">
+          <h4>Local Execution</h4>
+          <p>Forge runs entirely on your machine. No data is sent to external servers, except API calls to Groq for the language model.</p>
+        </div>
+        <div class="modal-section">
+          <h4>API Keys</h4>
+          <p>Your GROQ_API_KEY is stored locally in your .env file and never logged, stored, or transmitted to any third party.</p>
+        </div>
+        <div class="modal-section">
+          <h4>Generated Code</h4>
+          <p>All generated and executed code remains on your local machine. Forge does not back up or transmit what it creates.</p>
+        </div>
+        <div class="modal-section">
+          <h4>No Tracking</h4>
+          <p>Forge contains zero analytics, tracking, or telemetry of any kind.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP WIZARD MODAL -->
+  <div class="modal-overlay" id="wizardModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>Setup Guide</h3>
+        <button class="modal-close-btn" onclick="closeModal('wizardModal')">✕</button>
+      </div>
+      <div class="modal-body-inner">
+        <div class="wizard-steps" id="wDots"></div>
+
+        <div class="w-step visible" id="ws0">
+          <h4>Welcome to Forge</h4>
+          <p>This guide will get you up and running in under two minutes. You'll need a Groq API key — it's free.</p>
+          <p>Forge is a local dev agent: you describe tasks in plain English, it plans and executes them on your machine.</p>
+          <div class="w-footer">
+            <div></div>
+            <button class="w-btn w-btn-next" onclick="wNext()">Get Started</button>
+          </div>
+        </div>
+
+        <div class="w-step" id="ws1">
+          <h4>Add Your API Key</h4>
+          <p>Create a <code style="color:#c4862a; font-size:13px;">.env</code> file in the project root with your Groq key:</p>
+          <div class="code-block">GROQ_API_KEY=your_key_here</div>
+          <p style="font-size:13px; color:#6e6860;">Get a free key at <a href="https://console.groq.com" style="color:#c4862a; text-decoration:none;">console.groq.com →</a></p>
+          <div class="w-footer">
+            <button class="w-btn" onclick="wBack()">Back</button>
+            <button class="w-btn w-btn-next" onclick="wNext()">Continue</button>
+          </div>
+        </div>
+
+        <div class="w-step" id="ws2">
+          <h4>You're Ready</h4>
+          <ul class="w-list">
+            <li><strong>Plan:</strong> Describe a task in plain English</li>
+            <li><strong>Review:</strong> Inspect each step before running</li>
+            <li><strong>Execute:</strong> Watch Forge write and run your code</li>
+            <li><strong>History:</strong> Every completed task is saved locally</li>
+          </ul>
+          <p style="margin-top:16px; font-size:13px; color:#6e6860; font-style:italic;">All code stays on your machine. Nothing leaves without your knowledge.</p>
+          <div class="w-footer">
+            <button class="w-btn" onclick="wBack()">Back</button>
+            <button class="w-btn w-btn-next" onclick="closeModal('wizardModal')">Done</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="app">
-  <nav>
-    <div class="nav-brand">
-      <div class="nav-brand-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="1.5">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-          <path d="M2 17l10 5 10-5"/>
-          <path d="M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <div class="nav-logo">F<em>o</em>rge</div>
-    </div>
-    <div class="nav-right">
-      <div class="nav-status">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Initialising</span>
-      </div>
-    </div>
-  </nav>
-
-  <main>
-    <div class="hero">
-      <div class="hero-eyebrow">Autonomous Dev Agent</div>
-      <h1>Describe it.<br><em>Watch it build.</em></h1>
-      <p>Forge takes a task in plain English, thinks through it step by step, and executes — writing files, running commands, and fixing its own errors.</p>
-    </div>
-
-    <div class="caps">
-      <div class="cap">
-        <div class="cap-icon">✦</div>
-        <div class="cap-title">Writes Code</div>
-        <div class="cap-desc">Creates files and full project structures from scratch</div>
-      </div>
-      <div class="cap">
-        <div class="cap-icon">⟳</div>
-        <div class="cap-title">Self-Corrects</div>
-        <div class="cap-desc">Reads errors and retries until the task is complete</div>
-      </div>
-      <div class="cap">
-        <div class="cap-icon">◈</div>
-        <div class="cap-title">Runs Commands</div>
-        <div class="cap-desc">Installs packages, executes scripts, verifies output</div>
-      </div>
-    </div>
-
-    <div class="input-section">
-      <div class="input-label">Task</div>
-      <div class="input-box">
-        <textarea id="taskInput" placeholder="e.g. build a Python script that scrapes quotes from a website and saves them to a CSV..."></textarea>
-        <div class="input-footer">
-          <span class="input-hint">Ctrl + Enter to run</span>
-          <div class="input-actions">
-            <button class="btn-stop" id="stopBtn" onclick="stopTask()">
-              <svg width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" fill="currentColor" rx="1"/></svg>
-              Stop
-            </button>
-            <button class="btn-run" id="runBtn" onclick="runTask()">
-              Run
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="examples">
-        <span class="ex-chip" onclick="setEx(this)">Create a todo CLI in Python</span>
-        <span class="ex-chip" onclick="setEx(this)">Build a Flask REST API for notes</span>
-        <span class="ex-chip" onclick="setEx(this)">Write a web scraper for quotes</span>
-        <span class="ex-chip" onclick="setEx(this)">Make a file organiser script</span>
-        <span class="ex-chip" onclick="setEx(this)">Create a markdown to HTML converter</span>
-      </div>
-    </div>
-
-    <div class="output-wrap" id="outputWrap">
-      <div class="output-bar">
-        <div class="output-bar-left">
-          <div class="output-bar-dots">
-            <span class="dot-red"></span>
-            <span class="dot-yellow"></span>
-            <span class="dot-green"></span>
-          </div>
-          <span class="output-bar-title">Agent Output</span>
-        </div>
-        <button class="output-clear" onclick="clearOutput()">Clear</button>
-      </div>
-      <div class="output-body" id="outputBody"></div>
-    </div>
-  </main>
-
-  <footer>
-    <span>Forge — local dev agent</span>
-    <span>Powered by Groq · Llama 3.3 70B</span>
-  </footer>
-</div>
-
 <script>
-  // ── PARTICLES ──────────────────────────────────────────────────────
-  const canvas = document.getElementById('particleCanvas');
-  const ctx = canvas.getContext('2d');
-  let particles = [];
+  let wStep = 0;
+  const wTotal = 3;
+  let currentPlan = null;
+  let currentTask = null;
 
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  const TAGS = ['scaffold', 'write code', 'run tests', 'configure', 'validate', 'install deps'];
 
-  for (let i = 0; i < 60; i++) {
-    particles.push({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      r: Math.random() * 1.5 + 0.3,
-      dx: (Math.random() - 0.5) * 0.3,
-      dy: (Math.random() - 0.5) * 0.3,
-      o: Math.random() * 0.4 + 0.1
-    });
+  function showApp() {
+    document.getElementById('pgWelcome').style.display = 'none';
+    document.getElementById('pgApp').style.display = 'block';
+    renderHistory();
   }
 
-  function drawParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(200, 169, 110, ${p.o})`;
-      ctx.fill();
-      p.x += p.dx; p.y += p.dy;
-      if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-      if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-    });
-    requestAnimationFrame(drawParticles);
+  function showWizard() {
+    wStep = 0;
+    renderWizard();
+    document.getElementById('wizardModal').classList.add('open');
   }
-  drawParticles();
 
-  // ── WELCOME ────────────────────────────────────────────────────────
-  function enterApp() {
-    document.getElementById('welcome').classList.add('hide');
-    const app = document.getElementById('app');
-    app.classList.add('visible');
-    setTimeout(() => setStatus('ready', 'Ready'), 600);
+  function showPrivacy() {
+    document.getElementById('privacyModal').classList.add('open');
   }
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !document.getElementById('welcome').classList.contains('hide')) {
-      enterApp();
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function renderWizard() {
+    const dots = document.getElementById('wDots');
+    dots.innerHTML = Array.from({length: wTotal}, (_, i) =>
+      `<div class="w-dot ${i <= wStep ? 'active' : ''}"></div>`
+    ).join('');
+    for (let i = 0; i < wTotal; i++) {
+      document.getElementById('ws' + i).className = 'w-step' + (i === wStep ? ' visible' : '');
     }
-  });
-
-  // ── STATUS ─────────────────────────────────────────────────────────
-  function setStatus(state, text) {
-    document.getElementById('statusText').textContent = text;
-    document.getElementById('statusDot').className = `status-dot ${state}`;
   }
 
-  // ── EXAMPLES ───────────────────────────────────────────────────────
-  function setEx(el) {
-    document.getElementById('taskInput').value = el.textContent;
-    document.getElementById('taskInput').focus();
-  }
+  function wNext() { if (wStep < wTotal - 1) { wStep++; renderWizard(); } }
+  function wBack() { if (wStep > 0) { wStep--; renderWizard(); } }
 
-  // ── OUTPUT ─────────────────────────────────────────────────────────
-  function clearOutput() {
-    document.getElementById('outputBody').innerHTML = '';
-    document.getElementById('outputWrap').classList.remove('visible');
-  }
-
-  function addStep(type, label, content) {
-    const body = document.getElementById('outputBody');
-    const thinking = body.querySelector('.thinking');
-    if (thinking) thinking.remove();
-
-    const step = document.createElement('div');
-    step.className = `step ${type}`;
-    step.innerHTML = `
-      <div class="step-label">${label}</div>
-      <div class="step-content">${escapeHtml(content)}</div>
-    `;
-    body.appendChild(step);
-    body.scrollTop = body.scrollHeight;
-  }
-
-  function addThinking() {
-    const body = document.getElementById('outputBody');
-    const el = document.createElement('div');
-    el.className = 'thinking';
-    el.innerHTML = `<div class="dots"><span></span><span></span><span></span></div> Thinking...`;
-    body.appendChild(el);
-    body.scrollTop = body.scrollHeight;
-  }
-
-  function escapeHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ── RUN ────────────────────────────────────────────────────────────
-  let currentRunId = null;
-  let evtSource = null;
-
-  function runTask() {
+  async function doPlan() {
     const task = document.getElementById('taskInput').value.trim();
     if (!task) return;
 
-    currentRunId = Date.now().toString();
+    const btn = document.getElementById('planBtn');
+    const spinner = document.getElementById('planSpinner');
+    const label = document.getElementById('planBtnLabel');
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    label.textContent = 'Planning…';
 
-    document.getElementById('outputBody').innerHTML = '';
-    document.getElementById('outputWrap').classList.add('visible');
-    document.getElementById('runBtn').disabled = true;
-    document.getElementById('stopBtn').classList.add('visible');
-    setStatus('running', 'Running');
-    addThinking();
+    try {
+      const response = await fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task, mode: 'plan' })
+      });
 
-    evtSource = new EventSource(`/run?task=${encodeURIComponent(task)}&id=${currentRunId}`);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-    evtSource.onmessage = (e) => {
-      if (e.data === '[DONE]') {
-        finish();
-        return;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const content = line.slice(6);
+            if (content === '[DONE]') continue;
+            try {
+              const json = JSON.parse(content);
+              if (json.type === 'plan') {
+                currentPlan = JSON.parse(json.content);
+              }
+            } catch (e) {
+              console.error('Parse error:', e);
+            }
+          }
+        }
       }
-      try {
-        const event = JSON.parse(e.data);
-        addStep(event.type, event.label, event.content);
-        if (event.type !== 'done' && event.type !== 'error') addThinking();
-      } catch(err) {}
-    };
 
-    evtSource.onerror = () => finish();
+      if (currentPlan && currentPlan.steps) {
+        currentTask = task;
+        const planGrid = document.getElementById('planGrid');
+        planGrid.innerHTML = '';
+        currentPlan.steps.forEach((step, i) => {
+          const d = document.createElement('div');
+          d.className = 'plan-step';
+          d.style.animationDelay = (i * 0.07) + 's';
+          d.innerHTML = `
+            <div class="step-num">${step.id}</div>
+            <div class="step-text">${step.description}</div>
+            <div class="step-tag">${TAGS[i % TAGS.length]}</div>`;
+          planGrid.appendChild(d);
+        });
+
+        document.getElementById('stepCount').textContent = currentPlan.steps.length;
+        document.getElementById('planSection').classList.remove('hidden');
+        document.getElementById('execSection').classList.add('hidden');
+      }
+    } catch (err) {
+      console.error('Plan error:', err);
+    } finally {
+      spinner.style.display = 'none';
+      label.textContent = 'Plan Task';
+      btn.disabled = false;
+    }
   }
 
-  function finish() {
-    if (evtSource) { evtSource.close(); evtSource = null; }
-    document.getElementById('runBtn').disabled = false;
-    document.getElementById('stopBtn').classList.remove('visible');
-    setStatus('ready', 'Ready');
-    const thinking = document.getElementById('outputBody').querySelector('.thinking');
-    if (thinking) thinking.remove();
+  async function doExecute() {
+    if (!currentPlan || !currentTask) return;
+
+    document.getElementById('execSection').classList.remove('hidden');
+    const log = document.getElementById('logCard');
+    log.innerHTML = '';
+
+    try {
+      const response = await fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: currentTask, plan: currentPlan, mode: 'execute' })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const content = line.slice(6);
+            if (content === '[DONE]') continue;
+            try {
+              const json = JSON.parse(content);
+              const ts = new Date().toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+              const execLine = document.createElement('div');
+              execLine.className = 'log-line';
+              
+              let badgeType = json.type;
+              let msg = json.content || json.label || '';
+              
+              execLine.innerHTML = `
+                <span class="log-ts">${ts}</span>
+                <span class="log-badge ${badgeType}">${badgeType.toUpperCase()}</span>
+                <span class="log-msg ${badgeType === 'task' ? 'task-msg' : badgeType === 'done' ? 'done-msg' : ''}">${msg.slice(0, 120)}</span>`;
+              
+              log.appendChild(execLine);
+              log.scrollTop = log.scrollHeight;
+            } catch (e) {
+              console.error('Parse error:', e);
+            }
+          }
+        }
+      }
+
+      addToHistory(currentTask);
+    } catch (err) {
+      console.error('Execute error:', err);
+    }
   }
 
-  function stopTask() {
-    if (!currentRunId) return;
-    fetch('/stop', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({id: currentRunId})
-    });
-    finish();
+  function addToHistory(task) {
+    if (!task) return;
+    renderHistory();
   }
 
-  document.getElementById('taskInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.ctrlKey) runTask();
+  async function renderHistory() {
+    const sec = document.getElementById('historySection');
+    const grid = document.getElementById('historyGrid');
+    
+    try {
+      const res = await fetch('/history');
+      const data = await res.json();
+      
+      if (data.history.length === 0) { 
+        sec.classList.add('hidden'); 
+        return; 
+      }
+      
+      sec.classList.remove('hidden');
+      grid.innerHTML = data.history.map(h => `
+        <div class="history-entry">
+          <div class="history-dot"></div>
+          <div class="history-task">${h.task.slice(0, 64)}${h.task.length > 64 ? '…' : ''}</div>
+          <div class="history-time">${new Date(h.timestamp).toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit'})}</div>
+        </div>`
+      ).join('');
+    } catch (err) {
+      console.error('History error:', err);
+    }
+  }
+
+  document.getElementById('privacyModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal('privacyModal');
+  });
+  document.getElementById('wizardModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal('wizardModal');
   });
 </script>
-</body>
-</html>
